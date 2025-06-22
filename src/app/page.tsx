@@ -25,20 +25,35 @@ const panelStyle: CSSProperties = {
 const buttonStyle: CSSProperties = {
   padding: '10px 20px',
   fontSize: '1rem',
-  background: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: 4,
+  background: 'linear-gradient(90deg, #4f8cff 0%, #38d39f 100%)',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
   cursor: 'pointer',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  fontWeight: 600,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+  transition: 'background 0.2s, box-shadow 0.2s',
+};
+const buttonHoverStyle: CSSProperties = {
+  background: 'linear-gradient(90deg, #38d39f 0%, #4f8cff 100%)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
 };
 const labelStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: 8,
   background: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: 4,
+  border: '1px solid #e0e0e0',
+  borderRadius: 6,
   padding: '8px 12px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+};
+const sliderStyle: CSSProperties = {
+  marginLeft: 8,
+  accentColor: '#4f8cff',
+  height: 4,
+  borderRadius: 2,
+  background: 'linear-gradient(90deg, #4f8cff 0%, #38d39f 100%)',
 };
 
 function createEmptyGrid(rows: number, cols: number) {
@@ -259,11 +274,16 @@ export default function Home() {
         }}
       />
       <div style={panelStyle}>
-        <button onClick={() => setRestartKey((k) => k + 1)} style={buttonStyle}>
+        <button
+          onClick={() => setRestartKey((k) => k + 1)}
+          style={buttonStyle}
+          onMouseOver={e => (e.currentTarget.style.background = buttonHoverStyle.background as string)}
+          onMouseOut={e => (e.currentTarget.style.background = buttonStyle.background as string)}
+        >
           Restart
         </button>
         <label style={labelStyle}>
-          <span style={{fontSize: '0.95rem'}}>Speed</span>
+          <span style={{ fontSize: '0.95rem', color: '#222' }}>Speed</span>
           <input
             type='range'
             min={0}
@@ -271,14 +291,14 @@ export default function Home() {
             step={5}
             value={rawSpeed}
             onChange={(e) => setRawSpeed(Number(e.target.value))}
-            style={{marginLeft: 8}}
+            style={sliderStyle}
           />
-          <span style={{fontSize: '0.9rem', minWidth: 40, textAlign: 'right'}}>
+          <span style={{ fontSize: '0.9rem', minWidth: 40, textAlign: 'right', color: '#4f8cff' }}>
             {speed === 0 ? 'Max' : `${speed}ms`}
           </span>
         </label>
         <label style={labelStyle}>
-          <span style={{fontSize: '0.95rem'}}>Resolution</span>
+          <span style={{ fontSize: '0.95rem', color: '#222' }}>Resolution</span>
           <input
             type='range'
             min={2}
@@ -286,9 +306,9 @@ export default function Home() {
             step={1}
             value={cellSize}
             onChange={(e) => setCellSize(Number(e.target.value))}
-            style={{marginLeft: 8}}
+            style={sliderStyle}
           />
-          <span style={{fontSize: '0.9rem', minWidth: 40, textAlign: 'right'}}>
+          <span style={{ fontSize: '0.9rem', minWidth: 40, textAlign: 'right', color: '#4f8cff' }}>
             {cellSize}px
           </span>
         </label>
