@@ -59,6 +59,7 @@ function lerpColor(
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cellSize, setCellSize] = useState(CELL_SIZE);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 800,
     height: typeof window !== 'undefined' ? window.innerHeight : 600,
@@ -236,57 +237,69 @@ export default function Home() {
           zIndex: 1,
         }}
       />
-      <div className={styles.panel}>
+      <div className={styles.panelContainer}>
         <button
-          onClick={() => setRestartKey((k) => k + 1)}
-          className={styles.button}
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+          className={styles.toggleButton}
         >
-          Restart
+          Settings
         </button>
-        <label className={styles.label}>
-          <span style={{fontSize: '0.95rem', color: '#222'}}>Speed</span>
-          <input
-            type='range'
-            min={0}
-            max={MAX_SPEED}
-            step={5}
-            value={rawSpeed}
-            onChange={(e) => setRawSpeed(Number(e.target.value))}
-            className={styles.slider}
-          />
-          <span
-            style={{
-              fontSize: '0.9rem',
-              minWidth: 40,
-              textAlign: 'right',
-              color: '#4f8cff',
-            }}
-          >
-            {speed === 0 ? 'Max' : `${speed}ms`}
-          </span>
-        </label>
-        <label className={styles.label}>
-          <span style={{fontSize: '0.95rem', color: '#222'}}>Resolution</span>
-          <input
-            type='range'
-            min={2}
-            max={20}
-            step={1}
-            value={cellSize}
-            onChange={(e) => setCellSize(Number(e.target.value))}
-            className={styles.slider}
-          />
-          <span
-            style={{
-              fontSize: '0.9rem',
-              minWidth: 40,
-              textAlign: 'right',
-              color: '#4f8cff',
-            }}
-          >
-            {cellSize}px
-          </span>
-        </label>
+        {isPanelOpen && (
+          <div className={styles.panel}>
+            <button
+              onClick={() => setRestartKey((k) => k + 1)}
+              className={styles.button}
+            >
+              Restart
+            </button>
+            <label className={styles.label}>
+              <span style={{fontSize: '0.95rem', color: '#222'}}>Speed</span>
+              <input
+                type='range'
+                min={0}
+                max={MAX_SPEED}
+                step={5}
+                value={rawSpeed}
+                onChange={(e) => setRawSpeed(Number(e.target.value))}
+                className={styles.slider}
+              />
+              <span
+                style={{
+                  fontSize: '0.9rem',
+                  minWidth: 40,
+                  textAlign: 'right',
+                  color: '#4f8cff',
+                }}
+              >
+                {speed === 0 ? 'Max' : `${speed}ms`}
+              </span>
+            </label>
+            <label className={styles.label}>
+              <span style={{fontSize: '0.95rem', color: '#222'}}>
+                Resolution
+              </span>
+              <input
+                type='range'
+                min={2}
+                max={20}
+                step={1}
+                value={cellSize}
+                onChange={(e) => setCellSize(Number(e.target.value))}
+                className={styles.slider}
+              />
+              <span
+                style={{
+                  fontSize: '0.9rem',
+                  minWidth: 40,
+                  textAlign: 'right',
+                  color: '#4f8cff',
+                }}
+              >
+                {cellSize}px
+              </span>
+            </label>
+          </div>
+        )}
       </div>
     </>
   );
