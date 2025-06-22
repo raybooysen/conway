@@ -1,6 +1,5 @@
 'use client';
-import {useEffect, useRef, useState, useMemo} from 'react';
-import styles from './Home.module.css';
+import {useEffect, useRef, useState, useMemo, CSSProperties} from 'react';
 
 const CELL_SIZE = 5;
 const BASE_COLOR: [number, number, number] = [34, 34, 34]; // #222
@@ -9,6 +8,53 @@ const GREEN: [number, number, number] = [0, 200, 0];
 const RED: [number, number, number] = [220, 0, 0];
 const FADE_FRAMES = 20;
 const MAX_SPEED = 200;
+
+const panelStyle: CSSProperties = {
+  position: 'fixed',
+  top: '20px',
+  left: '20px',
+  zIndex: 10,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 16,
+  background: 'rgba(255,255,255,0.95)',
+  borderRadius: 8,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  padding: '10px 18px',
+};
+const buttonStyle: CSSProperties = {
+  padding: '10px 20px',
+  fontSize: '1rem',
+  background: 'linear-gradient(90deg, #4f8cff 0%, #38d39f 100%)',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontWeight: 600,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+  transition: 'background 0.2s, box-shadow 0.2s',
+};
+const buttonHoverStyle: CSSProperties = {
+  background: 'linear-gradient(90deg, #38d39f 0%, #4f8cff 100%)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+};
+const labelStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  background: '#fff',
+  border: '1px solid #e0e0e0',
+  borderRadius: 6,
+  padding: '8px 12px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+};
+const sliderStyle: CSSProperties = {
+  marginLeft: 8,
+  accentColor: '#4f8cff',
+  height: 4,
+  borderRadius: 2,
+  background: 'linear-gradient(90deg, #4f8cff 0%, #38d39f 100%)',
+};
 
 function createEmptyGrid(rows: number, cols: number) {
   return Array.from({length: rows}, () => Array(cols).fill(0));
@@ -227,14 +273,16 @@ export default function Home() {
           zIndex: 1,
         }}
       />
-      <div className={styles.panel}>
+      <div style={panelStyle}>
         <button
           onClick={() => setRestartKey((k) => k + 1)}
-          className={styles.button}
+          style={buttonStyle}
+          onMouseOver={e => (e.currentTarget.style.background = buttonHoverStyle.background as string)}
+          onMouseOut={e => (e.currentTarget.style.background = buttonStyle.background as string)}
         >
           Restart
         </button>
-        <label className={styles.label}>
+        <label style={labelStyle}>
           <span style={{ fontSize: '0.95rem', color: '#222' }}>Speed</span>
           <input
             type='range'
@@ -243,13 +291,13 @@ export default function Home() {
             step={5}
             value={rawSpeed}
             onChange={(e) => setRawSpeed(Number(e.target.value))}
-            className={styles.slider}
+            style={sliderStyle}
           />
           <span style={{ fontSize: '0.9rem', minWidth: 40, textAlign: 'right', color: '#4f8cff' }}>
             {speed === 0 ? 'Max' : `${speed}ms`}
           </span>
         </label>
-        <label className={styles.label}>
+        <label style={labelStyle}>
           <span style={{ fontSize: '0.95rem', color: '#222' }}>Resolution</span>
           <input
             type='range'
@@ -258,7 +306,7 @@ export default function Home() {
             step={1}
             value={cellSize}
             onChange={(e) => setCellSize(Number(e.target.value))}
-            className={styles.slider}
+            style={sliderStyle}
           />
           <span style={{ fontSize: '0.9rem', minWidth: 40, textAlign: 'right', color: '#4f8cff' }}>
             {cellSize}px
