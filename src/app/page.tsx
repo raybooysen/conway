@@ -79,16 +79,20 @@ export default function Home() {
   );
 
   // Memoize initial grid and color grid
-  const initialGrid = useMemo(() => randomizeGrid(createEmptyGrid(rows, cols)), [rows, cols]);
+  const initialGrid = useMemo(
+    () => randomizeGrid(createEmptyGrid(rows, cols)),
+    [rows, cols],
+  );
   const initialColorGrid = useMemo(
-    () => Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => ({
-        color: DEAD_COLOR as [number, number, number],
-        fade: 0,
-        target: DEAD_COLOR as [number, number, number],
-      }))
-    ),
-    [rows, cols]
+    () =>
+      Array.from({length: rows}, () =>
+        Array.from({length: cols}, () => ({
+          color: DEAD_COLOR as [number, number, number],
+          fade: 0,
+          target: DEAD_COLOR as [number, number, number],
+        })),
+      ),
+    [rows, cols],
   );
 
   const gridRef = useRef<number[][]>(initialGrid);
@@ -280,7 +284,7 @@ export default function Home() {
               </span>
               <input
                 type='range'
-                min={2}
+                min={1}
                 max={20}
                 step={1}
                 value={cellSize}
