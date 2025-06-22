@@ -1,7 +1,45 @@
 'use client';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, useMemo, CSSProperties} from 'react';
 
-const CELL_SIZE = 10;
+const CELL_SIZE = 5;
+const BASE_COLOR: [number, number, number] = [34, 34, 34]; // #222
+const DEAD_COLOR: [number, number, number] = [255, 255, 255]; // white background
+const GREEN: [number, number, number] = [0, 200, 0];
+const RED: [number, number, number] = [220, 0, 0];
+const FADE_FRAMES = 20;
+const MAX_SPEED = 200;
+
+const panelStyle: CSSProperties = {
+  position: 'fixed',
+  top: '20px',
+  left: '20px',
+  zIndex: 10,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 16,
+  background: 'rgba(255,255,255,0.95)',
+  borderRadius: 8,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  padding: '10px 18px',
+};
+const buttonStyle: CSSProperties = {
+  padding: '10px 20px',
+  fontSize: '1rem',
+  background: '#fff',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  cursor: 'pointer',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+};
+const labelStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  background: '#fff',
+  border: '1px solid #ccc',
+  borderRadius: 4,
+  padding: '8px 12px',
+};
 
 function createEmptyGrid(rows: number, cols: number) {
   return Array.from({length: rows}, () => Array(cols).fill(0));
@@ -49,69 +87,60 @@ function lerpColor(
   ];
 }
 
-const BASE_COLOR: [number, number, number] = [34, 34, 34]; // #222
-const DEAD_COLOR: [number, number, number] = [255, 255, 255]; // white background
-const GREEN: [number, number, number] = [0, 200, 0];
-const RED: [number, number, number] = [220, 0, 0];
-const FADE_FRAMES = 20;
-
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cellSize, setCellSize] = useState(CELL_SIZE);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 800,
     height: typeof window !== 'undefined' ? window.innerHeight : 600,
   });
-  const [rows, setRows] = useState(Math.floor(dimensions.height / CELL_SIZE));
-  const [cols, setCols] = useState(Math.floor(dimensions.width / CELL_SIZE));
-  const [restartKey, setRestartKey] = useState(0); // Used to trigger restart
-  const [speed, setSpeed] = useState(0); // 0 = max speed, otherwise ms per frame
-  const gridRef = useRef<number[][]>(
-    randomizeGrid(createEmptyGrid(rows, cols)),
+  const [restartKey, setRestartKey] = useState(0);
+  const [rawSpeed, setRawSpeed] = useState(MAX_SPEED);
+  const speed = MAX_SPEED - rawSpeed;
+
+  // Derive rows and cols from dimensions and cellSize
+  const rows = useMemo(
+    () => Math.floor(dimensions.height / cellSize),
+    [dimensions.height, cellSize],
   );
+  const cols = useMemo(
+    () => Math.floor(dimensions.width / cellSize),
+    [dimensions.width, cellSize],
+  );
+
+  // Memoize initial grid and color grid
+  const initialGrid = useMemo(() => randomizeGrid(createEmptyGrid(rows, cols)), [rows, cols]);
+  const initialColorGrid = useMemo(
+    () => Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => ({
+        color: DEAD_COLOR as [number, number, number],
+        fade: 0,
+        target: DEAD_COLOR as [number, number, number],
+      }))
+    ),
+    [rows, cols]
+  );
+
+  const gridRef = useRef<number[][]>(initialGrid);
   const colorGridRef = useRef<
     {
       color: [number, number, number];
       fade: number;
       target: [number, number, number];
     }[][]
-  >(
-    Array.from({length: rows}, () =>
-      Array.from({length: cols}, () => ({
-        color: DEAD_COLOR as [number, number, number],
-        fade: 0,
-        target: DEAD_COLOR as [number, number, number],
-      })),
-    ),
-  );
+  >(initialColorGrid);
 
   useEffect(() => {
     function handleResize() {
       const width = window.innerWidth;
       const height = window.innerHeight;
       setDimensions({width, height});
-      setRows(Math.floor(height / CELL_SIZE));
-      setCols(Math.floor(width / CELL_SIZE));
-      gridRef.current = randomizeGrid(
-        createEmptyGrid(
-          Math.floor(height / CELL_SIZE),
-          Math.floor(width / CELL_SIZE),
-        ),
-      );
-      colorGridRef.current = Array.from(
-        {length: Math.floor(height / CELL_SIZE)},
-        () =>
-          Array.from({length: Math.floor(width / CELL_SIZE)}, () => ({
-            color: DEAD_COLOR,
-            fade: 0,
-            target: DEAD_COLOR,
-          })),
-      );
     }
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Restart effect
+  // Reset grid and color grid on cellSize, dimensions, or restartKey change
   useEffect(() => {
     gridRef.current = randomizeGrid(createEmptyGrid(rows, cols));
     colorGridRef.current = Array.from({length: rows}, () =>
@@ -121,7 +150,7 @@ export default function Home() {
         target: DEAD_COLOR,
       })),
     );
-  }, [restartKey, rows, cols]);
+  }, [rows, cols, restartKey]);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
@@ -167,15 +196,16 @@ export default function Home() {
           if (colorState.fade < FADE_FRAMES) {
             colorState.fade++;
             const t = colorState.fade / FADE_FRAMES;
-            colorState.color = lerpColor(
-              colorState.color,
-              colorState.target,
+            const lerped = lerpColor(
+              colorState.color as [number, number, number],
+              colorState.target as [number, number, number],
               t,
             );
+            colorState.color = [lerped[0], lerped[1], lerped[2]];
           }
 
           ctx.fillStyle = `rgb(${colorState.color[0]},${colorState.color[1]},${colorState.color[2]})`;
-          ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
       }
     }
@@ -192,72 +222,28 @@ export default function Home() {
       }
     }
 
-    draw();
-    if (speed === 0) {
-      animationId = requestAnimationFrame(update);
-    } else {
-      timeoutId = setTimeout(update, speed);
-    }
+    update();
     return () => {
       running = false;
       cancelAnimationFrame(animationId);
       clearTimeout(timeoutId);
     };
-  }, [dimensions, rows, cols, restartKey, speed]);
+  }, [dimensions, rows, cols, speed, restartKey, cellSize]);
+
+  // Restart the simulation when the canvas is clicked
+  useEffect(() => {
+    function handleClick() {
+      setRestartKey((prev) => prev + 1);
+    }
+    const canvas = canvasRef.current;
+    canvas?.addEventListener('click', handleClick);
+    return () => {
+      canvas?.removeEventListener('click', handleClick);
+    };
+  }, []);
 
   return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          top: 20,
-          left: 20,
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <button
-          onClick={() => setRestartKey((k) => k + 1)}
-          style={{
-            padding: '10px 20px',
-            fontSize: '1rem',
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}
-        >
-          Restart
-        </button>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            padding: '8px 12px',
-          }}
-        >
-          <span style={{fontSize: '0.95rem'}}>Speed</span>
-          <input
-            type='range'
-            min={0}
-            max={200}
-            step={5}
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-            style={{marginLeft: 8}}
-          />
-          <span style={{fontSize: '0.9rem', minWidth: 40, textAlign: 'right'}}>
-            {speed === 0 ? 'Max' : `${speed}ms`}
-          </span>
-        </label>
-      </div>
       <canvas
         ref={canvasRef}
         width={dimensions.width}
@@ -269,8 +255,44 @@ export default function Home() {
           left: 0,
           width: '100vw',
           height: '100vh',
+          zIndex: 1,
         }}
       />
+      <div style={panelStyle}>
+        <button onClick={() => setRestartKey((k) => k + 1)} style={buttonStyle}>
+          Restart
+        </button>
+        <label style={labelStyle}>
+          <span style={{fontSize: '0.95rem'}}>Speed</span>
+          <input
+            type='range'
+            min={0}
+            max={MAX_SPEED}
+            step={5}
+            value={rawSpeed}
+            onChange={(e) => setRawSpeed(Number(e.target.value))}
+            style={{marginLeft: 8}}
+          />
+          <span style={{fontSize: '0.9rem', minWidth: 40, textAlign: 'right'}}>
+            {speed === 0 ? 'Max' : `${speed}ms`}
+          </span>
+        </label>
+        <label style={labelStyle}>
+          <span style={{fontSize: '0.95rem'}}>Resolution</span>
+          <input
+            type='range'
+            min={2}
+            max={20}
+            step={1}
+            value={cellSize}
+            onChange={(e) => setCellSize(Number(e.target.value))}
+            style={{marginLeft: 8}}
+          />
+          <span style={{fontSize: '0.9rem', minWidth: 40, textAlign: 'right'}}>
+            {cellSize}px
+          </span>
+        </label>
+      </div>
     </>
   );
 }
